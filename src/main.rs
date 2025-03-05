@@ -9,5 +9,6 @@ mod outbound; // Ensure environment loading works
 fn rocket() -> _ {
     rocket::build()
         .attach(application::place::place_category_module::stage())
+        .attach(application::users::post_users_module::stage())
         .attach(outbound::mongodb::adapter::MongoDB {})
 }

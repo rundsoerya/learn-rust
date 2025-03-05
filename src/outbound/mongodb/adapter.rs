@@ -5,7 +5,6 @@ use rocket::{
     Build, Rocket, error,
     fairing::{Fairing, Info, Kind},
     info,
-    log::private::debug,
 };
 use std::sync::Arc;
 
@@ -25,19 +24,18 @@ impl Fairing for MongoDB {
     async fn on_ignite(&self, rocket: Rocket<Build>) -> Result<Rocket<Build>, Rocket<Build>> {
         let env_vars = env::load_env(); // ✅ Load environment variables
         let mongodb_conn = env_vars.mongodb_host;
+        let dbname = "rustdb";
 
         match ClientOptions::parse(mongodb_conn.clone()).await {
             Ok(client_options) => match Client::with_options(client_options) {
                 Ok(client) => {
-                    let database = Arc::new(client.database("mydb"));
+                    let database = Arc::new(client.database(dbname));
                     if DB.set(database).is_err() {
                         error!("❌ Failed to set MongoDB instance.");
                         return Err(rocket);
                     }
 
                     info!("✅ Successfully connected to MongoDB at {}", mongodb_conn);
-                    debug!("📂 Using database: mydb");
-
                     Ok(rocket)
                 }
                 Err(err) => {
@@ -51,4 +49,9 @@ impl Fairing for MongoDB {
             }
         }
     }
+}
+
+// Function to get the database instance
+pub fn get_db() -> Option<Arc<Database>> {
+    DB.get().cloned()
 }
